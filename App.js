@@ -1,31 +1,75 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow
- */
+import React from 'react';
+import {StyleSheet, Text, View, ActivityIndicator, Button, Linking} from 'react-native';
+import UserForm from './app/components/UserForm/UserForm';
 
-import React, {Component} from 'react';
-import {Platform, StyleSheet, Text, View} from 'react-native';
+export default class App extends React.Component {
 
-const instructions = Platform.select({
-  ios: 'Press Cmd+R to reload,\n' + 'Cmd+D or shake for dev menu',
-  android:
-    'Double tap R on your keyboard to reload,\n' +
-    'Shake or press menu button for dev menu',
-});
+  constructor(props) {
+    super(props);
+    this.state = {
+      isLoading: true,
+      dataSource: null,
+      formFilled: false,
+    }
+  }
 
-type Props = {};
-export default class App extends Component<Props> {
+  submitInfo(){
+
+    this.setState({formFilled: true});
+
+    return fetch('https://partner-api.groupon.com/deals.json?tsToken=US_AFF_0_201236_212556_0&division_id=denver&offset=0&limit=100')
+      .then((response) => response.json() )
+      .then((responseJson) => {
+
+          this.setState({
+            isLoading: false,
+            dataSource: responseJson.deals,
+          })
+
+      })
+
+      .catch((error) => {
+        console.log(error)
+      });
+  }
+
   render() {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.welcome}>Welcome to React Native!</Text>
-        <Text style={styles.instructions}>To get started, edit App.js</Text>
-        <Text style={styles.instructions}>{instructions}</Text>
-      </View>
-    );
+
+      if(!this.state.formFilled){
+        return (
+          <View>
+            <UserForm submitMethod={() => this.submitInfo()} />
+        </View>
+      )
+      }
+
+
+      else if(this.state.isLoading) {
+        return (
+          <View style={styles.container}>
+              <ActivityIndicator />
+          </View>
+        )
+      } else {
+
+            let movies = this.state.dataSource.map((val, key) => {
+              return <View key={key} style={styles.item}>
+                          <Text>{val.title}</Text>
+                          <Button title={val.id} onPress={ () => Linking.openURL(val.dealUrl)}></Button>
+                    </View>
+            })
+
+        return (
+
+          <View style={styles.container}>
+
+              {movies}
+
+          </View>
+
+        );
+
+    }
   }
 }
 
@@ -34,16 +78,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5FCFF',
-  },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
+    backgroundColor: '#27ae60',
   },
 });
